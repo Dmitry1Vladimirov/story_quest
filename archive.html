@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoryQuest — архив историй</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    min-height: 100%;
+    background: #000;
+    color: #00ff88;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    padding: 80px 24px 60px;
+    position: relative;
+  }
+
+  /* сканлайны */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 136, 0.03) 0px,
+      rgba(0, 255, 136, 0.03) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 1;
+  }
+
+  .top-right {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    z-index: 10;
+  }
+
+  .back-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    text-decoration: none;
+    font-size: 14px;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+  }
+  .back-btn:hover {
+    background: #00ff88;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+  }
+
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  }
+
+  .subtitle {
+    color: rgba(0, 255, 136, 0.5);
+    font-size: 13px;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+  }
+
+  .story-list {
+    list-style: none;
+    border-top: 1px solid rgba(0, 255, 136, 0.3);
+  }
+
+  .story-item {
+    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    padding: 20px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.2s ease;
+  }
+
+  .story-item:hover {
+    background: rgba(0, 255, 136, 0.05);
+  }
+
+  .story-title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .story-meta {
+    font-size: 12px;
+    color: rgba(0, 255, 136, 0.5);
+    margin-top: 4px;
+  }
+
+  .story-download {
+    padding: 8px 16px;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  .story-download:hover {
+    background: #00ff88;
+    color: #000;
+  }
+
+  .empty, .error {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(0, 255, 136, 0.4);
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .error { color: #ff4466; }
+</style>
+</head>
+<body>
+
+  <div class="top-right">
+    <a href="index.html" class="back-btn">← назад</a>
+  </div>
+
+  <div class="container">
+    <h1>архив историй</h1>
+    <p class="subtitle">// скачай .json и загрузи в плеер</p>
+
+    <ul class="story-list" id="storyList"></ul>
+    <div class="empty" id="emptyMsg" style="display:none;">пока пусто</div>
+    <div class="error" id="errorMsg" style="display:none;"></div>
+  </div>
+
+<script>
+  const listEl   = document.getElementById('storyList');
+  const emptyEl  = document.getElementById('emptyMsg');
+  const errorEl  = document.getElementById('errorMsg');
+
+  fetch('stories/stories.json')
+    .then(r => {
+      if (!r.ok) throw new Error('не удалось загрузить stories.json');
+      return r.json();
+    })
+    .then(stories => {
+      if (!Array.isArray(stories) || stories.length === 0) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      stories.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'story-item';
+
+        const info = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'story-title';
+        title.textContent = s.title || s.file;
+        const meta = document.createElement('div');
+        meta.className = 'story-meta';
+        const parts = [];
+        if (s.author) parts.push('автор: ' + s.author);
+        if (s.chapter) parts.push(s.chapter);
+        if (s.size) parts.push(s.size);
+        meta.textContent = parts.join('  •  ') || s.file;
+        info.appendChild(title);
+        info.appendChild(meta);
+
+        const link = document.createElement('a');
+        link.className = 'story-download';
+        link.href = 'stories/' + s.file;
+        link.download = s.file;
+        link.textContent = 'скачать';
+
+        li.appendChild(info);
+        li.appendChild(link);
+        listEl.appendChild(li);
+      });
+    })
+    .catch(err => {
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'ошибка: ' + err.message;
+    });
+</script>
+
+</body>
+</html>
